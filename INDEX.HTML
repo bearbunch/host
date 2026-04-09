@@ -58,7 +58,11 @@ function login() {
     document.getElementById("login").style.display = "none";
     document.getElementById("panel").style.display = "block";
   }
-}
+
+  elseif (user.value === "Belle woodward" && pass.value === "Belle woodward")
+    document.getElementById("login").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+  }
 
 function schedule() {
   fetch(backend + "/show", {
