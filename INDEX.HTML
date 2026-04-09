@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Theater Host</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+.row {
+  margin-bottom: 5px;
+}
+.seat {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: white;
+}
+.free { background: green; }
+.booked { background: red; }
+</style>
+</head>
+<body>
+
+<h2>Host Login</h2>
+<div id="login">
+  <input id="user" placeholder="username"><br><br>
+  <input id="pass" type="password" placeholder="password"><br><br>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="panel" style="display:none">
+  <h3>Schedule Show</h3>
+  <input id="name" placeholder="Show name"><br><br>
+  <input type="date" id="date"><br><br>
+  <input type="time" id="time"><br><br>
+  <button onclick="schedule()">Confirm</button>
+
+  <div id="menu" style="display:none">
+    <h3>Seat Map</h3>
+    <div id="seats"></div>
+
+    <h3>Bookings</h3>
+    <div id="list"></div>
+
+    <button onclick="deleteShow()">Delete Listing</button>
+  </div>
+</div>
+
+<script>
+const backend = "https://xrxfkudrtyugvrycfzsaazssaaszzdrefztadfzd.onrender.com"; // replace with your backend URL
+const socket = io(backend);
+
+function login() {
+  if (user.value === "jwood" && pass.value === "jwood") {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+  }
+}
+
+function schedule() {
+  fetch(backend + "/show", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: name.value,
+      date: date.value,
+      time: time.value
+    })
+  }).then(() => {
+    document.getElementById("menu").style.display = "block";
+    load();
+  });
+}
+
+function load() {
+  fetch(backend + "/show")
+    .then(r => r.json())
+    .then(data => {
+      if (!data.show) return;
+      drawSeats(data.seats);
+      drawBookings(data.seats);
+    });
+}
+
+function drawSeats(seats) {
+  // group seats by row
+  let rows = {};
+  seats.forEach(s => {
+    const letter = s.seat[0];
+    if (!rows[letter]) rows[letter] = [];
+    rows[letter].push(s);
+  });
+
+  // render seats in order A→K
+  let html = "";
+  for (let r of "ABCDEFGHIJK") {
+    if (!rows[r]) continue;
+    html += `<div class="row"><b>${r}</b> `;
+    rows[r].forEach(s => {
+      html += `<div class="seat ${s.booked ? "booked" : "free"}">${s.seat}</div>`;
+    });
+    html += "</div>";
+  }
+  document.getElementById("seats").innerHTML = html;
+}
+
+function drawBookings(seats) {
+  let html = "";
+  seats.filter(s => s.booked).forEach(s => {
+    html += `Seat ${s.seat} - ${s.name}<br>`;
+  });
+  document.getElementById("list").innerHTML = html;
+}
+
+function deleteShow() {
+  fetch(backend + "/show", { method: "DELETE" })
+    .then(() => location.reload());
+}
+
+// WebSocket events
+socket.on("seatBooked", load);
+socket.on("showCreated", load);
+socket.on("showDeleted", () => location.reload());
+
+// initial load
+load();
+</script>
+
+</body>
+</html>
