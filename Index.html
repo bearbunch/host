@@ -68,12 +68,15 @@ function login() {
 function schedule() {
   fetch(backend + "/show", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({name: name.value, date: date.value, time: time.value})
-  }).then(() => {
-    document.getElementById("menu").style.display = "block";
-    load();
-  });
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: document.getElementById("name").value,
+      date: document.getElementById("date").value,
+      time: document.getElementById("time").value
+    })
+  })
 }
 
 function load() {
